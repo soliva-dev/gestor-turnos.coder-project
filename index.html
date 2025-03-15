@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestor de Turnos</title>
+    <link rel="stylesheet" href="./css/styles.css">
+</head>
+
+<body>
+    <div class="contenedor-turnos">
+        <h1>Gestor de Turnos</h1>
+
+        <button onclick="mostrarOcultar('turnosDisponibles')">Ver turnos disponibles</button>
+        <button onclick="reservarTurno()">Reservar un Turno</button>
+        <button onclick="cancelarTurno()">Cancelar un Turno</button>
+        <button onclick="mostrarOcultar('turnosReservados')">Ver turnos reservados</button>
+
+        <div class="acordeon" id="turnosDisponibles">
+            <h2>Turnos disponibles</h2>
+            <ul id="listaTurnos"></ul>
+        </div>
+
+        <div class="acordeon" id="turnosReservados">
+            <h2>Turnos reservados</h2>
+            <ul id="listaReservas"></ul>
+        </div>
+    </div>
+
+    <script src="./js/script.js"></script>
+</body>
+
+</html>
+
+
+
+
