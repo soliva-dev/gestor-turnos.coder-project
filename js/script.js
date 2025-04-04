@@ -112,17 +112,23 @@ function mostrarTurnosReservados(turnosFiltrados = turnos.filter(turno => turno.
 // Funcion para cancelar el turno
 function cancelarTurno(turno) {
     const turnoEncontrado = turnos.find(t => t.id === turno.id);
-    
+
     if (turnoEncontrado && turnoEncontrado.cliente !== null) {
         turnoEncontrado.cliente = null;
         guardarTurnos();
         mostrarTurnosDisponibles();
         mostrarTurnosReservados();
-        alert("¡Turno cancelado con éxito!");
+
+        // Eliminar el turno del calendario usando el ID del evento
+        $('#calendar').fullCalendar('removeEvents', function (event) {
+            return event.id === turno.id; // Compara el ID del evento con el ID del turno
+        });
+
+        alert("¡Turno cancelado con exito!");
         console.log("Turno cancelado con éxito");
     } else {
-        alert("No se pudo cancelar el turno, ya que no está reservado.");
-        console.log("No se pudo cancelar el turno, ya que no está reservado.");
+        alert("No se pudo cancelar el turno, ya que no esta reservado.");
+        console.log("No se pudo cancelar el turno, ya que no esta reservado.");
     }
 }
 
@@ -141,7 +147,16 @@ document.getElementById("formReservar").addEventListener("submit", function (eve
         guardarTurnos();
         mostrarTurnosDisponibles();
         mostrarTurnosReservados();
-        cargarTurnosEnCalendario();
+
+        // Agregar el nuevo turno al calendario
+        $('#calendar').fullCalendar('renderEvent', {
+            id: turnoEncontrado.id,
+            title: `${nombre}`,
+            start: `${fecha}T${hora}:00`,
+            allDay: false,
+            description: `Turno reservado por ${nombre}`,
+            color: '#ff0000'
+        });
 
         document.getElementById("formReservar").reset();
         alert("¡Turno reservado con exito!");
