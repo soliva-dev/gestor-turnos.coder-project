@@ -5,34 +5,80 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestor de Turnos</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="./css/styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.2.0/fullcalendar.min.css" rel="stylesheet" />
 </head>
 
 <body>
-    <div class="contenedor-turnos">
-        <h1>Gestor de Turnos</h1>
-
-        <button onclick="mostrarOcultar('turnosDisponibles')">Ver turnos disponibles</button>
-        <button onclick="reservarTurno()">Reservar un Turno</button>
-        <button onclick="cancelarTurno()">Cancelar un Turno</button>
-        <button onclick="mostrarOcultar('turnosReservados')">Ver turnos reservados</button>
-
-        <div class="acordeon" id="turnosDisponibles">
-            <h2>Turnos disponibles</h2>
-            <ul id="listaTurnos"></ul>
+    <div class="contenedor">
+        <!-- Usuario y cerrar sesión -->
+        <div id="usuarioInfo" class="usuario-info">
+            <span id="nombreUsuario">Admin</span>
+            <button id="cerrarSesionBtn" onclick="cerrarSesion()">
+                <i class="fas fa-sign-out-alt"></i>
+            </button>
         </div>
 
-        <div class="acordeon" id="turnosReservados">
-            <h2>Turnos reservados</h2>
-            <ul id="listaReservas"></ul>
+        <header>
+            <h1>Gestor de Turnos</h1>
+            <p>Organiza y administra tus turnos de manera sencilla.</p>
+        </header>
+
+        <div class="layout">
+            <!-- Turnos disponibles -->
+            <div class="tarjeta turnos-disponibles">
+                <h2>Turnos Disponibles</h2>
+                <label for="buscadorFecha">Buscar por fecha:</label>
+                <input type="date" id="buscadorFecha" oninput="filtrarTurnosDisponibles()">
+                <ul id="listaTurnos">
+                    <li>No hay turnos disponibles</li>
+                </ul>
+            </div>
+
+            <!-- Reservar turno -->
+            <div class="tarjeta reservar-turno">
+                <h2>Reservar un Turno</h2>
+                <form id="formReservar">
+                    <label>Fecha:</label>
+                    <input type="date" id="fechaReserva" required>
+
+                    <label>Hora:</label>
+                    <select id="horaReserva" required></select>
+
+                    <label>Nombre y Apellido:</label>
+                    <input type="text" id="nombreReserva" placeholder="Ej: Jose Perez" required>
+
+                    <button type="submit">Reservar</button>
+                </form>
+            </div>
+
+            <!-- Turnos reservados -->
+            <div class="tarjeta turnos-reservados">
+                <h2>Turnos Reservados</h2>
+                <label for="buscadorFechaReservados">Buscar por fecha:</label>
+                <input type="date" id="buscadorFechaReservados" oninput="filtrarTurnosReservados()">
+                <ul id="listaReservas">
+                    <li>No hay turnos reservados</li>
+                </ul>
+            </div>
+
+            <!-- Calendario de turnos reservados-->
+             <div class="tarjeta calendario">
+                <div id="calendar"></div>
+             </div>
         </div>
+
+        <footer>
+            <p>Proyecto JS de gestión de turnos - Oliva Samuel - CoderHouse</p>
+        </footer>
     </div>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.2.0/fullcalendar.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.2.0/locale/es.js"></script>
     <script src="./js/script.js"></script>
 </body>
 
 </html>
-
-
-
-
