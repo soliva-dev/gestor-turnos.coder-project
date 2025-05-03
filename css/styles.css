@@ -49,7 +49,7 @@ header {
     color: rgb(255, 255, 255);
 }
 
-/* Botón de cerrar sesión */
+/* Boton de cerrar sesion */
 #cerrarSesionBtn {
     background: none;
     border: none;
@@ -278,63 +278,15 @@ footer {
     color: #777;
 }
 
-/* Tablet (entre 768px y 1024px) */
-@media (max-width: 1024px) and (min-width: 768px) {
-    .layout {
-        grid-template-columns: 1fr;
-        gap: 15px;
-    }
-
-    .tarjeta.calendario {
-        grid-column: span 1;
-    }
-
-    .usuario-info {
-        top: 5px;
-        right: 5px;
-        padding: 6px 10px;
-    }
-
-    header h1 {
-        font-size: 1.5rem;
-    }
-}
-
-/* Mobile grande (entre 480px y 768px) */
-@media (max-width: 768px) and (min-width: 480px) {
-    .contenedor {
-        padding: 15px;
-    }
-
-    .layout {
-        grid-template-columns: 1fr;
-        gap: 10px;
-    }
-
-    .tarjeta {
-        padding: 10px;
-    }
-
-    header h1 {
-        font-size: 1.2rem;
-    }
-
-    #cerrarSesionBtn {
-        width: 35px;
-        height: 35px;
-    }
-}
-
-/* Mobile pequeño (menos de 480px) */
-@media (max-width: 479px) {
+/* Tablet 768px */
+@media (max-width: 768px) {
     body {
         padding: 10px;
-        padding-top: 50px;
+        padding-top: 40px;
     }
 
     .contenedor {
-        margin: 10px auto;
-        padding: 10px;
+        padding: 15px;
     }
 
     header {
@@ -342,7 +294,21 @@ footer {
     }
 
     header h1 {
-        font-size: 1rem;
+        font-size: 22px;
+    }
+
+    header p {
+        font-size: 14px;
+    }
+
+    .layout {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+
+    .turnos-reservados,
+    .tarjeta.calendario {
+        grid-column: span 1;
     }
 
     .usuario-info {
@@ -350,33 +316,94 @@ footer {
         align-items: flex-end;
     }
 
-    #cerrarSesionBtn {
-        width: 30px;
-        height: 30px;
-        font-size: 20px;
+    .usuario-info span {
+        font-size: 14px;
+    }
+
+    button,
+    select,
+    input[type="date"],
+    input[type="text"],
+    input[type="email"],
+    input[type="password"] {
+        font-size: 14px;
         padding: 8px;
     }
 
-    .layout {
-        grid-template-columns: 1fr;
-        gap: 8px;
+    label {
+        font-size: 14px;
     }
 
-    .tarjeta {
-        padding: 8px;
+    .fc-button {
+        padding: 6px 12px;
+        font-size: 14px;
     }
 
-    .tarjeta.calendario {
+    footer {
+        font-size: 0.8em;
+    }
+}
+
+/* Mobile 480px */
+@media (max-width: 480px) {
+    body {
+        padding: 5px;
+        padding-top: 30px;
+    }
+
+    .contenedor {
         padding: 10px;
     }
 
-    button {
+    header h1 {
+        font-size: 18px;
+    }
+
+    header p {
+        font-size: 13px;
+    }
+
+    .usuario-info {
+        top: 5px;
+        right: 5px;
+    }
+
+    .usuario-info span {
+        font-size: 12px;
+    }
+
+    #cerrarSesionBtn {
+        width: 32px;
+        height: 32px;
+        padding: 6px;
         font-size: 14px;
+    }
+
+    button,
+    select,
+    input[type="date"],
+    input[type="text"],
+    input[type="email"],
+    input[type="password"] {
+        font-size: 12px;
+        padding: 6px;
+    }
+
+    label {
+        font-size: 13px;
+    }
+
+    .fc-button {
+        padding: 4px 10px;
+        font-size: 12px;
+    }
+
+    ul li {
+        font-size: 13px;
         padding: 8px;
     }
 
-    input, select {
-        font-size: 14px;
-        padding: 8px;
+    footer {
+        font-size: 0.75em;
     }
 }

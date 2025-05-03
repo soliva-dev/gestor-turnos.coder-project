@@ -1,228 +1,308 @@
-// Verifica si el usuario inicio sesion; si no, lo redirige al login
-if (!localStorage.getItem("loggedIn")) {
-    console.log("User no logueado, redirigiendo al login");
-    window.location.href = "login.html";
+document.addEventListener('DOMContentLoaded', () => {
+    // Verifico si el usuario esta logueado
+    if (!localStorage.getItem("loggedIn")) {
+        Swal.fire({
+            title: 'Acceso denegado',
+            text: 'Tenes que iniciar sesion para acceder al gestor.',
+            icon: 'error',
+            confirmButtonText: 'Ir al login'
+        }).then(() => {
+            window.location.href = 'login.html'; // Redirijo al login
+        });
+        return; // Detengo la ejecucion si no esta logueado
+    }
+
+    cargarTurnosDesdeJSON();
+    document.getElementById('formReservar').addEventListener('submit', reservarTurno);
+    document.getElementById('fechaReserva').addEventListener('change', () => actualizarHoras(turnosDisponibles));
+    inicializarCalendario();
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+    cargarTurnosDesdeJSON();
+    document.getElementById('formReservar').addEventListener('submit', reservarTurno);
+    document.getElementById('fechaReserva').addEventListener('change', () => actualizarHoras(turnosDisponibles));
+    inicializarCalendario();
+});
+
+let turnosDisponibles = [];
+let reservas = JSON.parse(localStorage.getItem('reservas')) || [];
+
+function cargarTurnosDesdeJSON() {
+    fetch('./database/turnos.json')
+        .then(response => {
+            if (!response.ok) throw new Error('Error al cargar los turnos.');
+            return response.json();
+        })
+        .then(data => {
+            turnosDisponibles = data.filter(td => !reservas.some(r => r.fecha === td.fecha && r.hora === td.hora));
+            mostrarTurnos();
+            mostrarReservas();
+            actualizarHoras(turnosDisponibles);
+            actualizarCalendario();
+        })
+        .catch(error => {
+            console.error(error);
+            Swal.fire('Error', 'No se pudieron cargar los turnos disponibles.', 'error');
+        });
 }
 
-// Funcion para cerrar sesion y redireccionar al login
-function cerrarSesion() {
-    localStorage.removeItem("loggedIn");
-    console.log("Sesion de user cerrada");
-    window.location.href = "login.html";
+function mostrarTurnos(filtroFecha = '') {
+    const lista = document.getElementById('listaTurnos');
+    lista.innerHTML = '';
+    const filtrados = filtroFecha ? turnosDisponibles.filter(t => t.fecha === filtroFecha) : turnosDisponibles;
+    if (filtrados.length === 0) {
+        lista.innerHTML = '<li>No hay turnos disponibles</li>';
+        return;
+    }
+    filtrados.forEach(turno => {
+        const li = document.createElement('li');
+        li.textContent = `${turno.fecha} - ${turno.hora}`;
+        lista.appendChild(li);
+    });
 }
 
-// Define los horarios disponibles
-const horarios = ["09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00", "19:00", "20:00"];
+function actualizarHoras(lista) {
+    const select = document.getElementById('horaReserva');
+    select.innerHTML = '';
+    const fechaSeleccionada = document.getElementById('fechaReserva').value;
+    const horas = lista.filter(t => t.fecha === fechaSeleccionada);
 
-// Funcion para llenar los select de horas dinamicamente
-function llenarSelectHoras(idSelect) {
-    const select = document.getElementById(idSelect);
-    select.innerHTML = '<option value="">Seleccione una hora</option>';
-
-    horarios.forEach(hora => {
-        const option = document.createElement("option");
-        option.value = hora;
-        option.textContent = hora;
+    if (horas.length === 0) {
+        const option = document.createElement('option');
+        option.textContent = 'Sin horarios disponibles';
+        option.disabled = true;
         select.appendChild(option);
-    });
-}
-
-// Llenamos los select de horas al cargar la pagina
-llenarSelectHoras("horaReserva");
-
-// Funcion que genera turnos dinamicos para los proximos 7 dias habiles
-function generarTurnos() {
-    const turnos = [];
-    let fechaActual = new Date();
-
-    for (let i = 0; i < 7; i++) {
-        fechaActual.setDate(fechaActual.getDate() + 1);
-
-        // Si es sabado (6) o domingo (0), saltamos
-        if (fechaActual.getDay() === 0 || fechaActual.getDay() === 6) {
-            i--;
-            continue;
-        }
-
-        const fechaStr = fechaActual.toISOString().split("T")[0];
-
-        horarios.forEach(hora => {
-            turnos.push({ id: turnos.length + 1, cliente: null, fecha: fechaStr, hora: hora });
+    } else {
+        horas.forEach(t => {
+            const option = document.createElement('option');
+            option.value = t.hora;
+            option.textContent = t.hora;
+            select.appendChild(option);
         });
     }
-    console.log(`Turnos generados: ${turnos.length} turnos.`);
-    return turnos;
 }
 
-// Carga los turnos desde LocalStorage o los genera si no existen
-const turnos = JSON.parse(localStorage.getItem("turnos")) || generarTurnos();
-guardarTurnos();
+function reservarTurno(e) {
+    e.preventDefault();
 
-// Funcion para guardar turnos en LocalStorage
-function guardarTurnos() {
-    console.log("Turnos guardados en localstorage.");
-    localStorage.setItem("turnos", JSON.stringify(turnos));
-}
+    const fecha = document.getElementById('fechaReserva').value;
+    const hora = document.getElementById('horaReserva').value;
+    const nombre = document.getElementById('nombreReserva').value;
 
-// Funcion para mostrar turnos disponibles
-function mostrarTurnosDisponibles(turnosFiltrados = turnos.filter(turno => turno.cliente === null)) {
-    const lista = document.getElementById("listaTurnos");
-    lista.innerHTML = "";
-
-    if (turnosFiltrados.length === 0) {
-        lista.innerHTML = "<li>No hay turnos disponibles</li>";
+    // Valido que los campos no esten vacios
+    if (!fecha || !hora || !nombre) {
+        Swal.fire('Campos obligatorios', 'Por favor, completa todos los campos: Fecha, Hora y Nombre.', 'warning');
         return;
     }
 
-    turnosFiltrados.forEach(turno => {
-        const item = document.createElement("li");
-        item.textContent = `Fecha: ${turno.fecha} - Hora: ${turno.hora}`;
-        lista.appendChild(item);
-    });
-}
-
-// Funcion para mostrar turnos reservados
-function mostrarTurnosReservados(turnosFiltrados = turnos.filter(turno => turno.cliente !== null)) {
-    const lista = document.getElementById("listaReservas");
-    lista.innerHTML = "";
-
-    if (turnosFiltrados.length === 0) {
-        lista.innerHTML = "<li>No hay turnos reservados</li>";
+    // Verifico si ya existe una reserva para esa fecha y hora
+    const indiceExistente = reservas.findIndex(r => r.fecha === fecha && r.hora === hora);
+    if (indiceExistente !== -1) {
+        Swal.fire('Turno ya reservado', 'Ya existe un turno reservado para esa fecha y hora.', 'warning');
         return;
     }
 
-    turnosFiltrados.forEach(turno => {
-        const item = document.createElement("li");
-        item.textContent = `Fecha: ${turno.fecha} - Hora: ${turno.hora} - Cliente: ${turno.cliente}`;
-        
-        // Crear el botón de cancelación
-        const cancelarBtn = document.createElement("button");
-        cancelarBtn.textContent = "Cancelar turno";
-        cancelarBtn.classList.add("cancelar-btn");
-        cancelarBtn.addEventListener("click", function() {
-            cancelarTurno(turno);
-        });
+    // Verifico si la fecha y hora estan disponibles en la lista de turnos
+    const turnoDisponible = turnosDisponibles.find(t => t.fecha === fecha && t.hora === hora);
+    if (!turnoDisponible) {
+        Swal.fire('Fecha y hora no disponibles', 'La fecha o la hora seleccionada no estan disponibles.', 'warning');
+        return;
+    }
 
-        // Añadir el botón al elemento de la lista
-        item.appendChild(cancelarBtn);
-        lista.appendChild(item);
+    // Si todo esta bien, reservo el turno
+    const reserva = { fecha, hora, nombre };
+    reservas.push(reserva);
+    localStorage.setItem('reservas', JSON.stringify(reservas));
+
+    // Elimino el turno de los disponibles
+    const indiceTurnoDisponible = turnosDisponibles.findIndex(t => t.fecha === fecha && t.hora === hora);
+    if (indiceTurnoDisponible !== -1) {
+        turnosDisponibles.splice(indiceTurnoDisponible, 1);
+    }
+
+    Swal.fire('Turno reservado', `Turno para ${nombre}. Fecha: ${fecha}. Hora: ${hora}.`, 'success');
+
+    // Actualizo la vista
+    mostrarTurnos();
+    mostrarReservas();
+    document.getElementById('formReservar').reset();
+    actualizarHoras(turnosDisponibles);
+    actualizarCalendario();
+}
+
+function mostrarReservas(filtroFecha = '') {
+    const lista = document.getElementById('listaReservas');
+    lista.innerHTML = '';
+    const filtradas = filtroFecha ? reservas.filter(r => r.fecha === filtroFecha) : reservas;
+
+    if (filtradas.length === 0) {
+        lista.innerHTML = '<li>No hay turnos reservados</li>';
+        return;
+    }
+
+    filtradas.forEach((r, index) => {
+        const li = document.createElement('li');
+        li.innerHTML = `${r.fecha} - ${r.hora} - ${r.nombre} `;
+
+        const btnCancelar = document.createElement('button');
+        btnCancelar.textContent = 'Cancelar';
+        btnCancelar.classList.add('btn-cancelar');
+        btnCancelar.addEventListener('click', () => cancelarTurno(index));
+
+        li.appendChild(btnCancelar);
+        lista.appendChild(li);
     });
-} 
+}
 
-// Funcion para cancelar el turno
-function cancelarTurno(turno) {
-    const turnoEncontrado = turnos.find(t => t.id === turno.id);
+function cancelarTurno(indice) {
+    try {
+        const turno = reservas[indice];
+        if (!turno) throw new Error('Turno no encontrado');
 
-    if (turnoEncontrado && turnoEncontrado.cliente !== null) {
-        turnoEncontrado.cliente = null;
-        guardarTurnos();
-        mostrarTurnosDisponibles();
-        mostrarTurnosReservados();
+        Swal.fire({
+            title: '¿Estas seguro?',
+            text: `Vas a cancelar el turno del ${turno.fecha} a las ${turno.hora} para ${turno.nombre}`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Si, cancelar turno',
+            cancelButtonText: 'No, mantener turno'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // Elimino el turno de reservas
+                reservas.splice(indice, 1);
+                localStorage.setItem('reservas', JSON.stringify(reservas));
 
-        // Eliminar el turno del calendario usando el ID del evento
-        $('#calendar').fullCalendar('removeEvents', function (event) {
-            return event.id === turno.id; // Compara el ID del evento con el ID del turno
+                // Lo devuelvo a los turnos disponibles
+                turnosDisponibles.push(turno);
+
+                Swal.fire('Cancelado', 'El turno fue cancelado.', 'success');
+
+                mostrarReservas();
+                mostrarTurnos();
+                actualizarHoras(turnosDisponibles);
+                actualizarCalendario();
+            }
         });
 
-        alert("¡Turno cancelado con exito!");
-        console.log("Turno cancelado con éxito");
-    } else {
-        alert("No se pudo cancelar el turno, ya que no esta reservado.");
-        console.log("No se pudo cancelar el turno, ya que no esta reservado.");
+    } catch (error) {
+        console.error(error);
+        Swal.fire('Error', 'No se pudo cancelar el turno.', 'error');
     }
 }
 
-// Evento para reservar un turno
-document.getElementById("formReservar").addEventListener("submit", function (event) {
-    event.preventDefault();
-
-    const fecha = document.getElementById("fechaReserva").value;
-    const hora = document.getElementById("horaReserva").value;
-    const nombre = document.getElementById("nombreReserva").value;
-
-    const turnoEncontrado = turnos.find(turno => turno.fecha === fecha && turno.hora === hora && turno.cliente === null);
-
-    if (turnoEncontrado) {
-        turnoEncontrado.cliente = nombre;
-        guardarTurnos();
-        mostrarTurnosDisponibles();
-        mostrarTurnosReservados();
-
-        // Agregar el nuevo turno al calendario
-        $('#calendar').fullCalendar('renderEvent', {
-            id: turnoEncontrado.id,
-            title: `${nombre}`,
-            start: `${fecha}T${hora}:00`,
-            allDay: false,
-            description: `Turno reservado por ${nombre}`,
-            color: '#ff0000'
-        });
-
-        document.getElementById("formReservar").reset();
-        alert("¡Turno reservado con exito!");
-        console.log("Turno reservado");
-    } else {
-        alert("El turno ya esta reservado. Por favor, elige otro.");
-        console.log("El turno ya esta reservado");
-    }
-});
-
-// Funcion para filtrar turnos disponibles por fecha
 function filtrarTurnosDisponibles() {
-    const fechaBuscada = document.getElementById("buscadorFecha").value;
-    console.log(`Filtrando turnos disponibles por fecha: ${fechaBuscada}...`);
-    const turnosFiltrados = turnos.filter(turno => turno.cliente === null && turno.fecha.includes(fechaBuscada));
-    mostrarTurnosDisponibles(turnosFiltrados);
+    const fecha = document.getElementById('buscadorFecha').value;
+    mostrarTurnos(fecha);
 }
 
-// Funcion para filtrar turnos reservados por fecha
 function filtrarTurnosReservados() {
-    const fechaBuscada = document.getElementById("buscadorFechaReservados").value;
-    console.log(`Filtrando turnos reservados por fecha: ${fechaBuscada}...`);
-    const turnosFiltrados = turnos.filter(turno => turno.cliente !== null && turno.fecha.includes(fechaBuscada));
-    mostrarTurnosReservados(turnosFiltrados);
+    const fecha = document.getElementById('buscadorFechaReservados').value;
+    mostrarReservas(fecha);
 }
 
-// Funcion para mostrar turnos reservados en un calendario
-function cargarTurnosEnCalendario() {
-    console.log("Cargando turnos reservados en el calendario...");
-    const turnosReservados = turnos.filter(turno => turno.cliente !== null);
-
-    const eventos = turnosReservados.map(turno => {
-        return {
-            title: `${turno.cliente}`,
-            start: `${turno.fecha}T${turno.hora}:00`,
-            allDay: false,
-            description: `Turno reservado por ${turno.cliente}`,
-            color: '#ff0000'
-        };
+function limpiarLocalStorage() {
+    localStorage.clear();
+    reservas = [];
+    Swal.fire('LocalStorage limpiado', 'Datos borrados correctamente.', 'info').then(() => {
+        window.location.href = 'login.html';
     });
+}
 
+function cerrarSesion() {
+    Swal.fire('Sesion cerrada', 'Redirigiendo al login...', 'info').then(() => {
+        window.location.href = 'login.html';
+    });
+}
+
+// CALENDARIO
+function inicializarCalendario() {
     $('#calendar').fullCalendar({
-        events: eventos,
-        header: {
-            left: 'prev,next today',
-            center: 'title',
-            right: 'month,agendaWeek,agendaDay'
-        },
-        editable: true,
-        droppable: true,
-        eventRender: function(event, element) {
-            // Hacer que el texto de los eventos sea más flexible
-            element.find('.fc-title').css({
-                'white-space': 'normal',
-                'word-wrap': 'break-word',
-            });
+        locale: 'es',
+        header: { left: 'prev,next today', center: 'title', right: 'month,agendaWeek' },
+        editable: true, // Habilito drag & drop
+        events: [],
+        eventDrop: function(event, delta, revertFunc) {
+            try {
+                const nuevaFecha = moment(event.start).format('YYYY-MM-DD');
+                const nuevaHora = moment(event.start).format('HH:mm');
+                const nombre = event.title;
+        
+                // Verifico si la nueva fecha existe en el archivo JSON
+                const fechaExistente = turnosDisponibles.some(t => t.fecha === nuevaFecha);
+                if (!fechaExistente) {
+                    Swal.fire('Fecha no disponible', 'El turno no puede ser movido a esa fecha, ya que no esta disponible.', 'warning');
+                    revertFunc();
+                    return;
+                }
+        
+                // Verifico si la nueva hora esta disponible en esa fecha
+                const turnoNuevoDisponible = turnosDisponibles.find(t => t.fecha === nuevaFecha && t.hora === nuevaHora);
+                if (!turnoNuevoDisponible) {
+                    Swal.fire('Hora no disponible', 'El turno en la nueva hora no esta disponible.', 'warning');
+                    revertFunc();
+                    return;
+                }
+        
+                // Busco la reserva original por nombre
+                const reservaOriginal = reservas.find(r => r.nombre === nombre);
+        
+                if (!reservaOriginal) throw new Error('Reserva no encontrada.');
+        
+                const index = reservas.indexOf(reservaOriginal);
+        
+                // Verifico si el nuevo turno ya esta reservado
+                const ocupado = reservas.some(r => r.fecha === nuevaFecha && r.hora === nuevaHora);
+                if (ocupado) {
+                    Swal.fire('Ocupado', 'Ese turno ya esta reservado.', 'warning');
+                    revertFunc();
+                    return;
+                }
+        
+                // Devolvemos el turno anterior a disponibles
+                turnosDisponibles.push({ fecha: reservaOriginal.fecha, hora: reservaOriginal.hora });
+        
+                // Elimino el nuevo turno de disponibles
+                const i = turnosDisponibles.findIndex(t => t.fecha === nuevaFecha && t.hora === nuevaHora);
+                if (i !== -1) turnosDisponibles.splice(i, 1);
+        
+                // Actualizo la reserva
+                reservas[index] = { fecha: nuevaFecha, hora: nuevaHora, nombre };
+                localStorage.setItem('reservas', JSON.stringify(reservas));
+        
+                Swal.fire('Turno movido', `Nuevo turno: ${nuevaFecha} a las ${nuevaHora}`, 'success');
+                mostrarReservas();
+                mostrarTurnos();
+                actualizarHoras(turnosDisponibles);
+                actualizarCalendario();
+        
+            } catch (error) {
+                console.error(error);
+                Swal.fire('Error', 'No se pudo mover el turno.', 'error');
+                revertFunc();
+            }
         }
+        
+            
     });
+
+    actualizarCalendario();
 }
 
-// Llama a la funcion para cargar los turnos en el calendario
-$(document).ready(function() {
-    cargarTurnosEnCalendario();
-    console.log("Calendario cargado");
-});
+function actualizarCalendario() {
+    const calendar = $('#calendar');
+    calendar.fullCalendar('removeEvents');
 
-// Carga inicial de turnos en pantalla
-mostrarTurnosDisponibles();
-mostrarTurnosReservados();
+    const eventos = reservas.map(r => ({
+        title: r.nombre,
+        start: `${r.fecha}T${r.hora}`,
+        allDay: false
+    }));
+
+    calendar.fullCalendar('addEventSource', eventos);
+}
+
+function toggleCalendario() {
+    const contenido = document.getElementById('acordeonCalendario');
+    contenido.classList.toggle('activo');
+}
